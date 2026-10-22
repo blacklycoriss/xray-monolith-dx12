@@ -40,3 +40,6 @@ compressor/mod/
 *~
 
 __pycache__/
+
+# exclude doc files
+docs
