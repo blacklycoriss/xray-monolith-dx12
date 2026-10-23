@@ -46,26 +46,26 @@ void __cdecl dummy(void)
 #pragma comment(lib, "vfw32.lib")
 #pragma comment(lib, "nvapi.lib")
 
-#if !defined(STATIC_RENDERER_R1) && !defined(STATIC_RENDERER_R2) && !defined(STATIC_RENDERER_R3) && !defined(STATIC_RENDERER_R4)
-	#error Select one of the renderers R1, R2, R3, or R4
+#if !defined(STATIC_RENDERER_R1) && !defined(STATIC_RENDERER_R2) && !defined(STATIC_RENDERER_R3) && !defined(STATIC_RENDERER_R4) && !defined(STATIC_RENDERER_R5)
+	#error Select one of the renderers R1, R2, R3, R4, or R5
 #endif
 
 #ifdef STATIC_RENDERER_R1
-#if defined(STATIC_RENDERER_R2) || defined(STATIC_RENDERER_R3) || defined(STATIC_RENDERER_R4)
-		#error Only one of the renderers R1, R2, R3, and R4 can be selected at once
+#if defined(STATIC_RENDERER_R2) || defined(STATIC_RENDERER_R3) || defined(STATIC_RENDERER_R4) || defined(STATIC_RENDERER_R5)
+		#error Only one of the renderers R1, R2, R3, R4, and R5 can be selected at once
 #endif
 	#pragma comment(lib, "xrRender_R1.lib")
 	#pragma comment(lib, "d3dx9.lib")
 #endif
 #ifdef STATIC_RENDERER_R2
-#if defined(STATIC_RENDERER_R1) || defined(STATIC_RENDERER_R3) || defined(STATIC_RENDERER_R4)
-		#error Only one of the renderers R1, R2, R3, and R4 can be selected at once
+#if defined(STATIC_RENDERER_R1) || defined(STATIC_RENDERER_R3) || defined(STATIC_RENDERER_R4) || defined(STATIC_RENDERER_R5)
+		#error Only one of the renderers R1, R2, R3, R4, and R5 can be selected at once
 #endif
 	#pragma comment(lib, "xrRender_R2.lib")
 #endif
 #ifdef STATIC_RENDERER_R3
-#if defined(STATIC_RENDERER_R1) || defined(STATIC_RENDERER_R2) || defined(STATIC_RENDERER_R4)
-		#error Only one of the renderers R1, R2, R3, and R4 can be selected at once
+#if defined(STATIC_RENDERER_R1) || defined(STATIC_RENDERER_R2) || defined(STATIC_RENDERER_R4) || defined(STATIC_RENDERER_R5)
+		#error Only one of the renderers R1, R2, R3, R4, and R5 can be selected at once
 #endif
 #pragma comment(lib, "xrRender_R3.lib")
 #pragma comment(lib, "dxguid.lib")
@@ -75,8 +75,8 @@ void __cdecl dummy(void)
 #pragma comment(lib, "dxgi.lib")
 #endif
 #ifdef STATIC_RENDERER_R4
-#if  defined(STATIC_RENDERER_R1) || defined(STATIC_RENDERER_R2) || defined(STATIC_RENDERER_R3)
-		#error Only one of the renderers R1, R2, R3, and R4 can be selected at once
+#if  defined(STATIC_RENDERER_R1) || defined(STATIC_RENDERER_R2) || defined(STATIC_RENDERER_R3) || defined(STATIC_RENDERER_R5)
+		#error Only one of the renderers R1, R2, R3, R4, and R5 can be selected at once
 #endif
 	#pragma comment(lib, "xrRender_R4.lib")
 	#pragma comment(lib, "dxguid.lib")
@@ -85,6 +85,14 @@ void __cdecl dummy(void)
 	#pragma comment(lib, "d3d11.lib")
 	#pragma comment(lib, "dxgi.lib")
 	#pragma comment(lib, "d3d10.lib")
+#endif
+#ifdef STATIC_RENDERER_R5
+#if defined(STATIC_RENDERER_R1) || defined(STATIC_RENDERER_R2) || defined(STATIC_RENDERER_R3) || defined(STATIC_RENDERER_R4)
+    #error Only one of the renderers R1, R2, R3, R4, and R5 can be selected at once
+#endif
+#pragma comment(lib, "xrRender_R5.lib")
+#pragma comment(lib, "d3d12.lib")
+#pragma comment(lib, "dxgi.lib")
 #endif
 
 CEngineAPI::CEngineAPI()
@@ -125,6 +133,7 @@ extern BOOL DllMainXrRenderR1(HANDLE hModule, DWORD ul_reason_for_call, LPVOID l
 extern BOOL DllMainXrRenderR2(HANDLE hModule, DWORD ul_reason_for_call, LPVOID lpReserved);
 extern BOOL DllMainXrRenderR3(HANDLE hModule, DWORD ul_reason_for_call, LPVOID lpReserved);
 extern BOOL DllMainXrRenderR4(HANDLE hModule, DWORD ul_reason_for_call, LPVOID lpReserved);
+extern BOOL DllMainXrRenderR5(HANDLE hModule, DWORD ul_reason_for_call, LPVOID lpReserved);
 
 #ifdef STATIC_RENDERER_R1
 	#define DLL_MAIN_RENDERER DllMainXrRenderR1
@@ -138,12 +147,36 @@ extern BOOL DllMainXrRenderR4(HANDLE hModule, DWORD ul_reason_for_call, LPVOID l
 #ifdef STATIC_RENDERER_R4
 	#define DLL_MAIN_RENDERER DllMainXrRenderR4
 #endif
+#ifdef STATIC_RENDERER_R5
+    #define DLL_MAIN_RENDERER DllMainXrRenderR5
+#endif
 
 void CEngineAPI::InitializeNotDedicated()
 {
 	LPCSTR r2_name = "xrRender_R2.dll";
 	LPCSTR r3_name = "xrRender_R3.dll";
 	LPCSTR r4_name = "xrRender_R4.dll";
+	LPCSTR r5_name = "xrRender_R5.dll";
+#ifdef STATIC_RENDERER_R5
+    //if (psDeviceFlags.test(rsR4))
+    {
+        // try to initialize R5
+        psDeviceFlags.set(rsR2, FALSE);
+        psDeviceFlags.set(rsR3, FALSE);
+        psDeviceFlags.set(rsR4, FALSE);
+        Log("Loading DLL:", r5_name);
+        DllMainXrRenderR5(NULL, DLL_PROCESS_ATTACH, NULL);
+        //hRender = LoadLibrary(r5_name);
+    //if (0 == hRender)
+    //{
+    //    // try to load R1
+    //    Msg("! ...Failed - incompatible hardware/pre-Vista OS.");
+    //    psDeviceFlags.set(rsR2, TRUE);
+        //}
+        g_current_renderer = 0;
+    }
+#endif
+
 #ifdef STATIC_RENDERER_R4
 	//if (psDeviceFlags.test(rsR4))
     {
@@ -306,6 +339,9 @@ bool /*_declspec(dllexport)*/ SupportsDX10Rendering();
 #ifdef STATIC_RENDERER_R4
 	bool /*_declspec(dllexport)*/ SupportsDX11Rendering();
 #endif
+#ifdef STATIC_RENDERER_R5
+    bool /*_declspec(dllexport)*/ SupportsDX12Rendering();
+#endif
 };
 
 void CEngineAPI::CreateRendererList()
@@ -327,10 +363,12 @@ void CEngineAPI::CreateRendererList()
 	bool bSupports_r2_5 = false;
 	bool bSupports_r3 = false;
 	bool bSupports_r4 = false;
+	bool bSupports_r5 = false;
 
 	LPCSTR r2_name = "xrRender_R2.dll";
 	LPCSTR r3_name = "xrRender_R3.dll";
 	LPCSTR r4_name = "xrRender_R4.dll";
+	LPCSTR r5_name = "xrRender_R5.dll";
 
 	if (strstr(Core.Params, "-perfhud_hack"))
 	{
@@ -338,6 +376,7 @@ void CEngineAPI::CreateRendererList()
 		bSupports_r2_5 = true;
 		bSupports_r3 = true;
 		bSupports_r4 = true;
+		bSupports_r5 = true;
 	}
 	else
 	{
@@ -394,6 +433,25 @@ void CEngineAPI::CreateRendererList()
             //FreeLibrary(hRender);
         }
 #endif
+
+#ifdef STATIC_RENDERER_R5
+        // try to initialize R5
+        Log("Loading DLL:", r5_name);
+        // Hide "d3d10.dll not found" message box for XP
+        SetErrorMode(SEM_FAILCRITICALERRORS);
+        //hRender = LoadLibrary(r4_name);
+        DllMainXrRenderR5(NULL, DLL_PROCESS_ATTACH, NULL);
+        // Restore error handling
+        SetErrorMode(0);
+        //if (hRender)
+        {
+            //SupportsDX12RenderingREF* test_dx12_rendering = (SupportsDX12RenderingREF*)GetProcAddress(hRender, "SupportsDX12Rendering");
+            /*SupportsDX12RenderingREF* test_dx12_rendering = SupportsDX12Rendering;
+            R_ASSERT(test_dx12_rendering);*/
+            bSupports_r5 = SupportsDX12Rendering();
+            //FreeLibrary(hRender);
+        }
+#endif
 	}
 
 	//hRender = 0;
@@ -418,6 +476,10 @@ void CEngineAPI::CreateRendererList()
 #ifdef STATIC_RENDERER_R4
 	if (proceed &= bSupports_r4, proceed)
         _tmp.push_back("renderer_r4");
+#endif
+#ifdef STATIC_RENDERER_R5
+    if (proceed &= bSupports_r5, proceed)
+        _tmp.push_back("renderer_r5");
 #endif
 
 	R_ASSERT2(_tmp.size() != 0, "No valid renderer found, please use a render system that's supported by your PC");
